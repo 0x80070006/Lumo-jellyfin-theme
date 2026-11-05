@@ -1,0 +1,486 @@
+/*
+ * Lumo — thème pour Jellyfin 12
+ * Tout en CSS, à coller dans Tableau de bord > Général > CSS personnalisée
+ * (ou à importer via jsDelivr). Aucun JavaScript, aucun fichier modifié dans jellyfin-web.
+ *
+ * Règles :
+ *  - uniquement des classes stables de jellyfin-web (skinHeader, card, emby-*, detail*, osd*) ;
+ *  - aucun sélecteur positionnel (:nth-child), aucun masquage de contenu ;
+ *  - pas de backdrop-filter ni d'animation permanente (fluide sur TV et téléphone).
+ */
+
+:root {
+  --lumo-bg: #0b0b0c;
+  --lumo-bg-raised: #131315;
+  --lumo-surface: #1a1a1d;
+  --lumo-surface-hover: #232327;
+  --lumo-line: #2a2a2f;
+  --lumo-text: #ededee;
+  --lumo-text-dim: #9a9aa1;
+  --lumo-accent: #f2a541;
+  --lumo-accent-ink: #1a1206;
+  --lumo-danger: #e5484d;
+  --lumo-radius: 6px;
+  --lumo-radius-card: 4px;
+  --lumo-font: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --lumo-ease: cubic-bezier(.2, .7, .2, 1);
+  --lumo-fast: 140ms;
+}
+
+/* ───── Base ───── */
+
+html,
+body,
+.backgroundContainer,
+.dialog,
+.formDialogHeader,
+.formDialogFooter {
+  background-color: var(--lumo-bg) !important;
+  color: var(--lumo-text);
+}
+
+body,
+.emby-button,
+.emby-input,
+.emby-textarea,
+.emby-select,
+.cardText,
+.sectionTitle,
+h1, h2, h3 {
+  font-family: var(--lumo-font) !important;
+}
+
+/* Fond derrière les pages avec backdrop : on assombrit sans flouter (coût GPU nul). */
+.backgroundContainer.withBackdrop {
+  background-color: rgba(11, 11, 12, .82) !important;
+}
+
+::selection {
+  background: var(--lumo-accent);
+  color: var(--lumo-accent-ink);
+}
+
+a,
+.button-link {
+  color: var(--lumo-accent);
+}
+
+/* Barres de défilement discrètes */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--lumo-line) transparent;
+}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--lumo-line); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ───── En-tête ───── */
+
+.skinHeader {
+  background: linear-gradient(to bottom, rgba(11, 11, 12, .96), rgba(11, 11, 12, .72)) !important;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--lumo-fast) linear;
+}
+.skinHeader.semiTransparent,
+.skinHeader-withBackground {
+  background: rgba(11, 11, 12, .9) !important;
+}
+.skinHeader .pageTitle {
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+.headerTabs .emby-tab-button {
+  color: var(--lumo-text-dim);
+  font-weight: 550;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.emby-tab-button-active,
+.emby-tab-button.emby-button-active {
+  color: var(--lumo-text) !important;
+  box-shadow: inset 0 -2px 0 var(--lumo-accent);
+}
+.emby-tab-button:hover {
+  color: var(--lumo-text);
+}
+
+/* ───── Menu latéral ───── */
+
+.mainDrawer {
+  background: var(--lumo-bg-raised) !important;
+  border-right: 1px solid var(--lumo-line);
+}
+.navMenuOption {
+  border-radius: var(--lumo-radius);
+  margin: 1px .5em;
+  color: var(--lumo-text-dim);
+}
+.navMenuOption:hover {
+  background: var(--lumo-surface) !important;
+  color: var(--lumo-text);
+}
+.navMenuOption-selected {
+  background: var(--lumo-surface) !important;
+  color: var(--lumo-text) !important;
+  box-shadow: inset 2px 0 0 var(--lumo-accent);
+}
+.sidebarHeader {
+  color: var(--lumo-text-dim);
+  font-size: .78em;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* ───── Titres de section ───── */
+
+.sectionTitle,
+.sectionTitle-cards {
+  font-size: 1.15em !important;
+  font-weight: 650 !important;
+  letter-spacing: -.005em;
+  color: var(--lumo-text);
+}
+.sectionTitleContainer .sectionTitleTextButton .material-icons,
+.sectionTitleContainer .sectionTitleTextButton .sectionTitleIcon {
+  color: var(--lumo-text-dim);
+  transition: transform var(--lumo-fast) var(--lumo-ease), color var(--lumo-fast);
+}
+.sectionTitleContainer .sectionTitleTextButton:hover .material-icons,
+.sectionTitleContainer .sectionTitleTextButton:hover .sectionTitleIcon {
+  color: var(--lumo-accent);
+  transform: translateX(2px);
+}
+
+/* ───── Cartes ───── */
+
+.cardBox {
+  border-radius: var(--lumo-radius-card);
+  background: transparent !important;
+  transition: transform var(--lumo-fast) var(--lumo-ease);
+}
+.cardScalable,
+.cardImageContainer,
+.cardContent {
+  border-radius: var(--lumo-radius-card) !important;
+}
+.cardScalable {
+  background: var(--lumo-surface);
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .04);
+}
+.cardImageContainer {
+  background-color: var(--lumo-surface) !important;
+}
+.cardOverlayContainer {
+  border-radius: var(--lumo-radius-card);
+  background: rgba(0, 0, 0, .35) !important;
+}
+
+/* Survol (souris uniquement : pas d'effet collant sur tactile) */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .cardBox {
+    transform: translateY(-3px);
+  }
+  .card:hover .cardScalable {
+    box-shadow: 0 0 0 1px var(--lumo-accent);
+  }
+}
+
+/* Focus clavier / télécommande */
+.card:focus .cardBox,
+.card.show-focus:focus .cardBox {
+  transform: none;
+}
+.card:focus .cardScalable,
+.layout-tv .card:focus .cardScalable {
+  box-shadow: 0 0 0 2px var(--lumo-accent) !important;
+}
+.layout-tv .card:focus .cardBox {
+  transform: scale(1.04);
+}
+
+.cardText {
+  color: var(--lumo-text);
+}
+.cardText-secondary,
+.cardText.cardText-secondary {
+  color: var(--lumo-text-dim) !important;
+  font-size: .86em;
+}
+
+/* Indicateurs */
+.itemProgressBar {
+  background: rgba(255, 255, 255, .14) !important;
+  height: 3px !important;
+}
+.itemProgressBarForeground,
+.playbackProgress > div {
+  background: var(--lumo-accent) !important;
+}
+.countIndicator,
+.playedIndicator,
+.indicator {
+  background: var(--lumo-accent) !important;
+  color: var(--lumo-accent-ink) !important;
+  box-shadow: none !important;
+}
+
+/* ───── Boutons ───── */
+
+.emby-button.raised,
+.button-flat,
+.raised {
+  border-radius: var(--lumo-radius) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+.emby-button.raised:not(.button-submit) {
+  background: var(--lumo-surface) !important;
+  color: var(--lumo-text) !important;
+  border: 1px solid var(--lumo-line);
+}
+.emby-button.raised:not(.button-submit):hover {
+  background: var(--lumo-surface-hover) !important;
+}
+.button-submit,
+.emby-button.button-submit,
+.btnPlay.detailButton,
+.mainDetailButtons .btnPlay {
+  background: var(--lumo-accent) !important;
+  color: var(--lumo-accent-ink) !important;
+  border: 0 !important;
+}
+.button-submit:hover,
+.emby-button.button-submit:hover {
+  background: #f6b763 !important;
+}
+.button-delete,
+.emby-button.button-delete {
+  background: var(--lumo-danger) !important;
+  color: #fff !important;
+}
+
+.paper-icon-button-light:hover:not(:disabled) {
+  color: var(--lumo-accent);
+  background: rgba(255, 255, 255, .06) !important;
+}
+
+/* Boutons de la fiche (lecture, favoris…) */
+.detailButton {
+  border-radius: var(--lumo-radius) !important;
+}
+.mainDetailButtons .detailButton:not(.btnPlay) {
+  background: var(--lumo-surface) !important;
+}
+.mainDetailButtons .detailButton:not(.btnPlay):hover {
+  background: var(--lumo-surface-hover) !important;
+}
+.detailButton-content .material-icons.favorite,
+.btnUserItemRating[data-isfavorite="true"] .material-icons,
+.ratingbutton-icon-withrating {
+  color: var(--lumo-accent) !important;
+}
+
+/* ───── Champs de formulaire ───── */
+
+.emby-input,
+.emby-textarea,
+.emby-select-withcolor,
+.emby-select {
+  background: var(--lumo-bg-raised) !important;
+  border: 1px solid var(--lumo-line) !important;
+  border-radius: var(--lumo-radius) !important;
+  color: var(--lumo-text) !important;
+  transition: border-color var(--lumo-fast);
+}
+.emby-input:focus,
+.emby-textarea:focus,
+.emby-select-withcolor:focus,
+.emby-select:focus {
+  border-color: var(--lumo-accent) !important;
+  outline: none;
+}
+.inputLabelFocused,
+.selectLabelFocused,
+.textareaLabelFocused {
+  color: var(--lumo-accent) !important;
+}
+.emby-checkbox:checked + span + .checkboxOutline,
+.emby-checkbox:focus:checked + span + .checkboxOutline {
+  background-color: var(--lumo-accent) !important;
+  border-color: var(--lumo-accent) !important;
+}
+.emby-checkbox:checked + span + .checkboxOutline > .checkboxIcon-checked {
+  color: var(--lumo-accent-ink) !important;
+}
+.emby-slider::-webkit-slider-thumb { background: var(--lumo-accent) !important; }
+.emby-slider::-moz-range-thumb { background: var(--lumo-accent) !important; }
+.emby-slider-background-lower { background-color: var(--lumo-accent) !important; }
+
+.focuscontainer-x .emby-button:focus-visible,
+.emby-button:focus-visible,
+.card:focus-visible,
+.listItem:focus-visible,
+.MuiButtonBase-root:focus-visible {
+  outline: 2px solid var(--lumo-accent) !important;
+  outline-offset: 2px;
+}
+
+/* ───── Listes et dialogues ───── */
+
+.listItem {
+  border-radius: var(--lumo-radius);
+}
+.listItem:hover,
+.listItem-hoverable:hover {
+  background: var(--lumo-surface) !important;
+}
+.listItem-border {
+  border-bottom: 1px solid var(--lumo-line) !important;
+}
+.paperList,
+.visualCardBox {
+  background: var(--lumo-bg-raised) !important;
+  border-radius: var(--lumo-radius) !important;
+  border: 1px solid var(--lumo-line);
+}
+.dialog,
+.actionSheet {
+  border-radius: 10px !important;
+  border: 1px solid var(--lumo-line);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .6) !important;
+}
+.actionSheetMenuItem:hover {
+  background: var(--lumo-surface) !important;
+}
+.toast {
+  background: var(--lumo-surface) !important;
+  color: var(--lumo-text) !important;
+  border: 1px solid var(--lumo-line);
+  border-radius: var(--lumo-radius) !important;
+}
+
+/* ───── Fiche film / série ───── */
+
+.itemBackdrop {
+  /* Le dégradé fond l'image dans la page au lieu d'une coupure nette. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+.detailPagePrimaryContainer,
+.detailRibbon {
+  background: transparent !important;
+}
+.layout-desktop .detailRibbon,
+.layout-tv .detailRibbon {
+  background: linear-gradient(to bottom, transparent, var(--lumo-bg) 70%) !important;
+}
+.itemName.infoText.parentNameLast,
+.detailPagePrimaryContainer .itemName {
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.itemMiscInfo,
+.itemMiscInfo .mediaInfoItem {
+  color: var(--lumo-text-dim);
+}
+.mediaInfoOfficialRating,
+.mediaInfoItem.mediaInfoText {
+  border: 1px solid var(--lumo-line) !important;
+  border-radius: 3px;
+  background: transparent !important;
+}
+.starIcon,
+.mediaInfoCriticRatingFresh + .mediaInfoItem {
+  color: var(--lumo-accent) !important;
+}
+.overview-text,
+.overview {
+  color: #c9c9cd;
+  line-height: 1.55;
+  max-width: 72ch;
+}
+.itemDetailsGroup .detailsGroupItem .label {
+  color: var(--lumo-text-dim);
+}
+.chapterThumbContainer,
+.chapterThumb {
+  border-radius: var(--lumo-radius-card);
+}
+
+/* ───── Connexion ───── */
+
+#loginPage,
+.loginPage {
+  background: radial-gradient(120% 80% at 50% 0%, #17140f 0%, var(--lumo-bg) 60%) !important;
+}
+#loginPage .padded-left.padded-right,
+.manualLoginForm,
+.visualLoginForm {
+  max-width: 24em;
+  margin-left: auto;
+  margin-right: auto;
+}
+#loginPage h1 {
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.loginDisclaimer {
+  color: var(--lumo-text-dim);
+}
+
+/* ───── Lecteur ───── */
+
+.osdHeader,
+.videoOsdBottom {
+  background: linear-gradient(to top, rgba(0, 0, 0, .8), transparent) !important;
+}
+.osdHeader {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, .7), transparent) !important;
+}
+.nowPlayingBar {
+  background: var(--lumo-bg-raised) !important;
+  border-top: 1px solid var(--lumo-line);
+}
+.mdl-slider-background-lower,
+.sliderBubble {
+  background-color: var(--lumo-accent) !important;
+}
+.sliderBubble {
+  color: var(--lumo-accent-ink) !important;
+}
+
+/* ───── Chargement ───── */
+
+/* Spinner natif : couleur de l'accent, rien d'autre. */
+.mdl-spinner__layer {
+  border-color: var(--lumo-accent) !important;
+}
+.docspinner {
+  color: var(--lumo-accent);
+}
+
+/* ───── Tableau de bord (pages React/MUI) : on ne fait que l'accent ───── */
+
+.MuiButton-containedPrimary {
+  background-color: var(--lumo-accent) !important;
+  color: var(--lumo-accent-ink) !important;
+}
+.Mui-selected,
+.MuiTab-root.Mui-selected {
+  color: var(--lumo-accent) !important;
+}
+.MuiTabs-indicator {
+  background-color: var(--lumo-accent) !important;
+}
+
+/* ───── Accessibilité ───── */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation-duration: .01ms !important;
+  }
+}
