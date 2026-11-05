@@ -12,14 +12,14 @@
 (() => {
   "use strict";
   if (window.__lumo) return;
-  window.__lumo = { version: "1.2.1" };
+  window.__lumo = { version: "1.2.2" };
 
   const LOG = "[Lumo]";
   const BASE = (() => {
     if (window.LUMO_BASE) return String(window.LUMO_BASE).replace(/\/?$/, "/");
     const src = document.currentScript && document.currentScript.src;
     if (src && /lumo(\.min)?\.js/.test(src)) return src.replace(/lumo(\.min)?\.js.*$/, "");
-    return "https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.2.1/";
+    return "https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.2.2/";
   })();
 
   const CONFIG = Object.assign({

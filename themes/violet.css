@@ -1,6 +1,6 @@
 /* Lumo — palette « Violet »
  * Un violet profond, proche de l'identité de Jellyfin.
- * À coller à la fin de : Tableau de bord > Général > CSS personnalisée
+ * Remplace le bloc :root de : Tableau de bord > Général > CSS personnalisée
  * (ou : install.sh --accent "#8b5cf6" --ink "#ffffff")
  */
 :root {

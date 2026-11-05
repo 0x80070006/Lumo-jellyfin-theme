@@ -1,6 +1,6 @@
 /* Lumo — palette « Rouge cinéma »
  * L'accent des salles obscures et des plateformes de streaming.
- * À coller à la fin de : Tableau de bord > Général > CSS personnalisée
+ * Remplace le bloc :root de : Tableau de bord > Général > CSS personnalisée
  * (ou : install.sh --accent "#e50914" --ink "#ffffff")
  */
 :root {

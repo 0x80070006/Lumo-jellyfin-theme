@@ -9,14 +9,15 @@
 #   1. vérifie Jellyfin et installe si besoin les plugins File Transformation et
 #      JavaScript Injector (somme MD5 du dépôt officiel vérifiée) ;
 #   2. sauvegarde la configuration actuelle dans /var/lib/jellyfin/lumo-backups/ ;
-#   3. copie TOUT le CSS dans « CSS personnalisée » et TOUT le JS dans JavaScript
-#      Injector : aucun fichier de jellyfin-web n'est modifié, aucune dépendance CDN
-#      à l'exécution (seuls les logos de studios viennent de jsDelivr, version figée) ;
-#   4. redémarre Jellyfin.
+#   3. écrit dans « CSS personnalisée » UNE ligne @import (le thème est chargé depuis
+#      GitHub via jsDelivr, version figée) suivie de la couleur dominante, et dans
+#      JavaScript Injector un chargeur d'une ligne pour lumo.js ;
+#      avec --inline, copie à la place tout le CSS et tout le JS (serveur hors ligne) ;
+#   4. redémarre Jellyfin. Aucun fichier de jellyfin-web n'est modifié.
 # Le script est idempotent : relancez-le pour mettre à jour.
 set -euo pipefail
 
-VERSION="${LUMO_VERSION:-1.2.1}"
+VERSION="${LUMO_VERSION:-1.2.2}"
 REPO="0x80070006/Lumo-jellyfin-theme"
 RAW="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
 CDN="https://cdn.jsdelivr.net/gh/${REPO}@${VERSION}/"
@@ -31,6 +32,7 @@ INK=""
 SOURCE=""
 RESTART=1
 PLUGINS=1
+INLINE=0
 
 c_ok=$'\e[32m'; c_warn=$'\e[33m'; c_err=$'\e[31m'; c_dim=$'\e[2m'; c_off=$'\e[0m'
 say()  { printf '%s▸%s %s\n' "$c_ok" "$c_off" "$*"; }
@@ -46,7 +48,8 @@ Lumo ${VERSION} — thème Jellyfin
   --uninstall          retirer Lumo (CSS et script) ; les plugins restent installés
   --no-plugins         ne pas installer File Transformation / JavaScript Injector
   --no-restart         ne pas redémarrer Jellyfin
-  --source DIR         utiliser lumo.css / lumo.js locaux au lieu de GitHub
+  --inline             copier tout le CSS et le JS dans Jellyfin (pas de CDN au chargement)
+  --source DIR         avec --inline : utiliser lumo.css / lumo.js locaux au lieu de GitHub
 EOF
 }
 
@@ -57,7 +60,8 @@ while [ $# -gt 0 ]; do
     --uninstall) ACTION="uninstall"; shift ;;
     --no-restart) RESTART=0; shift ;;
     --no-plugins) PLUGINS=0; shift ;;
-    --source) SOURCE="${2:-}"; shift 2 ;;
+    --inline) INLINE=1; shift ;;
+    --source) SOURCE="${2:-}"; INLINE=1; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) die "option inconnue : $1 (voir --help)" ;;
   esac
@@ -128,11 +132,12 @@ PY
 # ── Configuration (CSS de branding + script de JavaScript Injector) ────────
 configure() { # install|uninstall
   python3 - "$1" "${CONF_DIR}/branding.xml" "${PLUGINS_DIR}/configurations/Jellyfin.Plugin.JavaScriptInjector.xml" \
-    "$TMP/lumo.css" "$TMP/lumo.js" "$VERSION" "$CDN" "$ACCENT" "$INK" <<'PY'
+    "$TMP/lumo.css" "$TMP/lumo.js" "$VERSION" "$CDN" "$ACCENT" "$INK" "$INLINE" <<'PY'
 import os, re, sys
 import xml.etree.ElementTree as ET
 
-action, branding_path, injector_path, css_path, js_path, version, cdn, accent, ink = sys.argv[1:10]
+action, branding_path, injector_path, css_path, js_path, version, cdn, accent, ink, inline = sys.argv[1:11]
+inline = inline == "1"
 MARK = "/* Lumo "
 
 def load(path, root_tag):
@@ -165,14 +170,25 @@ if action == "install":
     ink_ = ink or (old_ink.group(1) if old_ink else "#1a1206")
     if current.strip() and MARK not in current and "Lumo" not in current:
         print("  ancienne CSS personnalisée remplacée (copie dans la sauvegarde)")
-    css = open(css_path, encoding="utf-8").read().strip()
-    css_node.text = (
-        f"{MARK}{version} — installé par install.sh ; relancez-le pour mettre à jour. */\n\n"
-        f"{css}\n\n"
-        "/* ═══ Couleur dominante : modifiez ces deux valeurs puis enregistrez (Ctrl+F5) ═══ */\n"
-        f":root {{\n  --lumo-accent: {acc};\n  --lumo-accent-ink: {ink_};\n}}\n"
-    )
-    print(f"  CSS personnalisée : Lumo {version}, couleur {acc}")
+    if inline:
+        body = open(css_path, encoding="utf-8").read().strip()
+        head = f"{MARK}{version} — CSS complète copiée par install.sh --inline ; relancez-le pour mettre à jour. */"
+    else:
+        body = f'@import url("{cdn}lumo.css");'
+        head = f"{MARK}{version} — le thème est chargé depuis GitHub ; relancez install.sh pour mettre à jour. */"
+    css_node.text = "\n".join([
+        head,
+        body,
+        "",
+        "/* Couleur dominante : changez ces deux valeurs, enregistrez, puis Ctrl+F5.",
+        "   Palettes prêtes : https://github.com/0x80070006/Lumo-jellyfin-theme/tree/main/themes */",
+        ":root {",
+        f"  --lumo-accent: {acc};",
+        f"  --lumo-accent-ink: {ink_};",
+        "}",
+        "",
+    ])
+    print(f"  CSS personnalisée : Lumo {version} ({'complète' if inline else '@import GitHub'}), couleur {acc}")
 else:
     if "Lumo" in current:
         css_node.text = ""
@@ -188,10 +204,19 @@ for entry in list(scripts):
     if (entry.findtext("Name") or "").strip() == "Lumo":
         scripts.remove(entry)
 if action == "install":
-    js = open(js_path, encoding="utf-8").read()
+    if inline:
+        script = f'window.LUMO_BASE = "{cdn}";\n' + open(js_path, encoding="utf-8").read()
+    else:
+        script = "\n".join([
+            f"// Lumo {version} — chargé depuis GitHub (jsDelivr). Pour mettre à jour : relancez install.sh.",
+            '(function(){if(document.querySelector("script[data-lumo]"))return;'
+            'var s=document.createElement("script");'
+            f's.src="{cdn}lumo.js";s.defer=true;s.dataset.lumo="1";document.head.appendChild(s);}})();',
+            "",
+        ])
     entry = ET.SubElement(scripts, "CustomJavaScriptEntry")
     ET.SubElement(entry, "Name").text = "Lumo"
-    ET.SubElement(entry, "Script").text = f'window.LUMO_BASE = "{cdn}";\n{js}'
+    ET.SubElement(entry, "Script").text = script
     ET.SubElement(entry, "Src")
     ET.SubElement(entry, "Module").text = "false"
     ET.SubElement(entry, "Enabled").text = "true"
@@ -232,13 +257,21 @@ if [ "$ACTION" = "uninstall" ]; then
 fi
 
 say "Lumo ${VERSION} pour Jellyfin ${SERVER_VERSION:-?}"
-if [ -n "$SOURCE" ]; then
-  cp "$SOURCE/lumo.css" "$SOURCE/lumo.js" "$TMP/"
+if [ "$INLINE" -eq 1 ]; then
+  if [ -n "$SOURCE" ]; then
+    cp "$SOURCE/lumo.css" "$SOURCE/lumo.js" "$TMP/"
+  else
+    curl -fsSL "${RAW}/lumo.css" -o "$TMP/lumo.css" || die "téléchargement impossible : ${RAW}/lumo.css"
+    curl -fsSL "${RAW}/lumo.js" -o "$TMP/lumo.js" || die "téléchargement impossible : ${RAW}/lumo.js"
+  fi
+  grep -q "lumo-hero" "$TMP/lumo.css" && grep -q "__lumo" "$TMP/lumo.js" || die "fichiers Lumo invalides."
 else
-  curl -fsSL "${RAW}/lumo.css" -o "$TMP/lumo.css" || die "téléchargement impossible : ${RAW}/lumo.css"
-  curl -fsSL "${RAW}/lumo.js" -o "$TMP/lumo.js" || die "téléchargement impossible : ${RAW}/lumo.js"
+  # Mode distant : on vérifie que la version demandée est bien servie avant de l'écrire.
+  for f in lumo.css lumo.js; do
+    curl -fsSL "${CDN}${f}" -o "$TMP/$f" || die "version ${VERSION} introuvable sur jsDelivr (${CDN}${f})."
+  done
+  grep -q "lumo-hero" "$TMP/lumo.css" && grep -q "__lumo" "$TMP/lumo.js" || die "fichiers Lumo invalides sur jsDelivr."
 fi
-grep -q "lumo-hero" "$TMP/lumo.css" && grep -q "__lumo" "$TMP/lumo.js" || die "fichiers Lumo invalides."
 
 if [ "$PLUGINS" -eq 1 ]; then
   install_plugin "File Transformation" "https://www.iamparadox.dev/jellyfin/plugins/manifest.json"

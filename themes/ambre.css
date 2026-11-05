@@ -1,6 +1,6 @@
 /* Lumo — palette « Ambre »
  * La couleur par défaut : chaude, lisible, discrète sur fond graphite.
- * À coller à la fin de : Tableau de bord > Général > CSS personnalisée
+ * Remplace le bloc :root de : Tableau de bord > Général > CSS personnalisée
  * (ou : install.sh --accent "#f2a541" --ink "#1a1206")
  */
 :root {

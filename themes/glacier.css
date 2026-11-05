@@ -1,6 +1,6 @@
 /* Lumo — palette « Bleu glacier »
  * Un bleu froid et net, très lisible sur téléviseur.
- * À coller à la fin de : Tableau de bord > Général > CSS personnalisée
+ * Remplace le bloc :root de : Tableau de bord > Général > CSS personnalisée
  * (ou : install.sh --accent "#5ab0ff" --ink "#04121f")
  */
 :root {

@@ -24,7 +24,7 @@ Principes : uniquement l'API publique de Jellyfin, aucun contenu natif masqué, 
 
 ## Couleurs
 
-Cinq palettes prêtes à l'emploi, dans [`themes/`](themes). Collez-en une à la fin de *CSS personnalisée*, ou passez-la au script :
+Cinq palettes prêtes à l'emploi, dans [`themes/`](themes). Remplacez le bloc `:root` de *CSS personnalisée* par l'une d'elles, ou passez-la au script :
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash -s -- --accent "#e50914" --ink "#ffffff"
@@ -94,7 +94,19 @@ En root, dans le conteneur ou la machine Jellyfin :
 curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash
 ```
 
-Le script installe les plugins nécessaires (File Transformation, JavaScript Injector), sauvegarde la configuration, copie tout le CSS dans *CSS personnalisée* et tout le JS dans *JavaScript Injector*, puis redémarre Jellyfin. Relancez-le pour mettre à jour ; `--uninstall` retire tout.
+Le script installe les plugins nécessaires (File Transformation, JavaScript Injector), sauvegarde la configuration, puis écrit **une ligne** dans *CSS personnalisée* et **une ligne** dans *JavaScript Injector* : tout le code reste sur GitHub. Il ne vous reste que la couleur à régler :
+
+```css
+/* Lumo 1.2.2 — le thème est chargé depuis GitHub ; relancez install.sh pour mettre à jour. */
+@import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.2.2/lumo.css");
+
+:root {
+  --lumo-accent: #f2a541;      /* couleur dominante */
+  --lumo-accent-ink: #1a1206;  /* texte posé dessus */
+}
+```
+
+Relancez la commande pour mettre à jour ; `--uninstall` retire tout ; `--inline` copie tout le code dans Jellyfin pour un serveur sans Internet.
 
 Détails, options, installation à la main, réglages conseillés de Home Screen Sections et dépannage : **[docs/INSTALLATION.md](docs/INSTALLATION.md)**.
 

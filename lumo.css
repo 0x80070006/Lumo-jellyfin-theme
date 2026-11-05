@@ -1,12 +1,13 @@
 /*
- * Lumo — thème pour Jellyfin 12
- * Tout en CSS, à coller dans Tableau de bord > Général > CSS personnalisée
- * (ou à importer via jsDelivr). Aucun JavaScript, aucun fichier modifié dans jellyfin-web.
+ * Lumo — thème pour Jellyfin 12 (CSS). La couche interactive est dans lumo.js.
+ * Installation : install.sh, ou dans « CSS personnalisée » :
+ *   @import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@<version>/lumo.css");
+ *   :root { --lumo-accent: #f2a541; --lumo-accent-ink: #1a1206; }
  *
  * Règles :
  *  - uniquement des classes stables de jellyfin-web (skinHeader, card, emby-*, detail*, osd*) ;
- *  - aucun sélecteur positionnel (:nth-child), aucun masquage de contenu ;
- *  - pas de backdrop-filter ni d'animation permanente (fluide sur TV et téléphone).
+ *  - aucun masquage de contenu natif ;
+ *  - pas d'animation permanente sur les pages de Jellyfin (fluide sur TV et téléphone).
  */
 
 :root {
@@ -279,7 +280,8 @@ a,
 }
 .button-submit:hover,
 .emby-button.button-submit:hover {
-  background: #f6b763 !important;
+  background: var(--lumo-accent) !important;
+  filter: brightness(1.1);
 }
 .button-delete,
 .emby-button.button-delete {
