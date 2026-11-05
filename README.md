@@ -1,89 +1,106 @@
 # Lumo — thème Jellyfin
 
-Un thème sombre pour Jellyfin 12, pensé comme une application de streaming, sans casser Jellyfin.
+Un thème sombre pour **Jellyfin 12**, pensé comme une application de streaming, sans toucher aux fichiers de Jellyfin.
 
-**Thème CSS** (`lumo.css`)
-- Fond graphite, une couleur dominante modifiable, coins nets.
-- Toutes les affiches et vignettes à la même taille ; survol sans chevauchement.
-- Aucun contenu natif masqué.
-
-**Couche interactive** (`lumo.js`, optionnelle)
-- Grand hero cinématique en haut de l'accueil : logo du titre, infos, Lecture / Plus d'infos, défilement automatique (pause au survol, balayage tactile, flèches clavier).
-- Rangées **Studios** et **Plateformes** : 5 tuiles visibles, flèches pour défiler. Un clic ouvre tous les titres du studio, même répartis sur plusieurs studios (Walt Disney Pictures + Animation Studios…).
-- Rangées **Ajouts récents** par bibliothèque (séries et animes regroupés par série), **10 rangées par genre** et des rangées **par studio** : 5 affiches visibles, 15 au total, puis une tuile « Voir plus ».
-- Bouton **dé** à côté de la recherche : choisir un genre, Films / Séries, « non vus », puis une roulette tire un titre — jamais le même que les derniers tirages.
-
-Principes : uniquement l'API publique de Jellyfin, aucun fichier de `jellyfin-web` modifié, chaque module échoue seul (l'interface native reste utilisable), rangées chargées à l'approche de l'écran.
-
-## Installation
-
-### En une commande (recommandé)
-
-Dans le conteneur ou la machine qui fait tourner Jellyfin, en root :
+![Accueil Lumo](docs/screenshots/accueil-ambre.jpg)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash
 ```
 
-Le script :
-1. installe si besoin **File Transformation** et **JavaScript Injector** (somme de contrôle du dépôt officiel vérifiée) ;
-2. sauvegarde la configuration actuelle dans `/var/lib/jellyfin/lumo-backups/` ;
-3. copie **tout le CSS** dans *CSS personnalisée* et **tout le JS** dans *JavaScript Injector* : rien ne dépend d'un CDN au chargement des pages (seuls les logos de studios viennent de jsDelivr, version figée ; sans réseau, le nom du studio s'affiche à la place) ;
-4. redémarre Jellyfin. Rechargez ensuite chaque appareil une fois avec Ctrl+F5.
+→ [Guide d'installation complet](docs/INSTALLATION.md)
 
-Aucun fichier de `jellyfin-web` n'est modifié : les mises à jour de Jellyfin n'effacent rien. Relancez la même commande pour mettre à jour Lumo ; votre couleur dominante est conservée.
+## Ce que Lumo apporte
 
-Options (après `bash -s --`) :
+- **Hero cinématique** en haut de l'accueil : logo du titre, année, durée, note, genres, résumé, boutons *Lecture* et *Plus d'infos*. Il change tout seul, se met en pause au survol et répond au balayage tactile comme aux flèches du clavier.
+- **Studios** et **Plateformes** en tuiles-logos, 5 par 5, avec flèches. Un clic ouvre tous les titres du studio, même répartis sur plusieurs noms : Walt Disney Pictures, Walt Disney Animation Studios… sont regroupés.
+- **Ajouts récents** par bibliothèque, avec les séries et les animes regroupés **par série** (jamais par épisode ou par saison).
+- **10 rangées par genre** et des **rangées par studio** : 5 affiches visibles, 15 au total, puis une tuile *Voir plus*.
+- **Le dé** à côté de la recherche : choisissez un genre, films ou séries, « seulement ce que je n'ai pas vu », et une roulette tire un titre pour vous. Elle ne propose jamais deux fois de suite les mêmes titres.
+- **Tuiles uniformes** : toutes les affiches à la même taille, les vignettes « Continuer à regarder » aussi. Le survol ne déplace rien, donc plus de chevauchement.
+- **Une couleur dominante**, modifiable en une ligne.
+
+Principes : uniquement l'API publique de Jellyfin, aucun contenu natif masqué, chaque module échoue seul (l'interface native reste utilisable), rangées chargées à l'approche de l'écran.
+
+## Couleurs
+
+Cinq palettes prêtes à l'emploi, dans [`themes/`](themes). Collez-en une à la fin de *CSS personnalisée*, ou passez-la au script :
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash -s -- --accent "#e50914"
-curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash -s -- --accent "#e50914" --ink "#ffffff"
 ```
 
-`--accent`, `--ink`, `--uninstall`, `--no-plugins`, `--no-restart`, `--source DIR` (fichiers locaux). Version précise : `LUMO_VERSION=1.2.0`.
+| Palette | Couleur | Fichier | Aperçu |
+| --- | --- | --- | --- |
+| Ambre (par défaut) | `#f2a541` | [`themes/ambre.css`](themes/ambre.css) | [voir](docs/screenshots/accueil-ambre.jpg) |
+| Rouge cinéma | `#e50914` | [`themes/rouge.css`](themes/rouge.css) | [voir](docs/screenshots/accueil-rouge.jpg) |
+| Violet | `#8b5cf6` | [`themes/violet.css`](themes/violet.css) | [voir](docs/screenshots/accueil-violet.jpg) |
+| Bleu glacier | `#5ab0ff` | [`themes/glacier.css`](themes/glacier.css) | [voir](docs/screenshots/accueil-glacier.jpg) |
+| Vert menthe | `#3ecf8e` | [`themes/menthe.css`](themes/menthe.css) | [voir](docs/screenshots/accueil-menthe.jpg) |
 
-### À la main
+<table>
+  <tr>
+    <td><img src="docs/screenshots/accueil-rouge.jpg" alt="Palette rouge cinéma"><br><sub>Rouge cinéma</sub></td>
+    <td><img src="docs/screenshots/accueil-violet.jpg" alt="Palette violette"><br><sub>Violet</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/accueil-glacier.jpg" alt="Palette bleu glacier"><br><sub>Bleu glacier</sub></td>
+    <td><img src="docs/screenshots/accueil-menthe.jpg" alt="Palette vert menthe"><br><sub>Vert menthe</sub></td>
+  </tr>
+</table>
 
-1. Collez [`lumo.css`](lumo.css) dans Tableau de bord → **Général** → **CSS personnalisée**.
-2. Installez **JavaScript Injector** (dépôt `https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/manifest.json`), redémarrez, puis ajoutez un script contenant [`lumo.js`](lumo.js).
-
-### Couleur dominante
-
-À la fin de *CSS personnalisée* :
+Exemple de bloc (palette rouge) :
 
 ```css
 :root {
-  --lumo-accent: #f2a541;      /* boutons, liserés, roulette… */
-  --lumo-accent-ink: #1a1206;  /* texte posé sur la couleur dominante */
+  --lumo-accent: #e50914;      /* boutons, liserés, points du hero, roulette */
+  --lumo-accent-ink: #ffffff;  /* texte posé sur la couleur dominante */
 }
 ```
 
-### Écran d'accueil conseillé
+Autres variables disponibles : `--lumo-bg`, `--lumo-bg-raised`, `--lumo-surface`, `--lumo-text`, `--lumo-text-dim`, `--lumo-radius`, `--lumo-radius-card`.
 
-Avec *Home Screen Sections*, gardez **Continuer à regarder** (vue paysage) et désactivez **À suivre**, **Mes médias**, **Ajouté récemment dans…** et **Genre** : Lumo les remplace (ajouts récents regroupés par série, rangées de genres).
+## Le dé
 
-## Personnaliser
+Un clic sur le dé, à côté de la loupe : l'arrière-plan se floute, vous choisissez un genre, et la roulette s'arrête sur un titre, avec *Lecture* ou *Voir la fiche*. *Relancer* tire toujours un autre titre.
 
-Variables CSS disponibles dans `:root` : `--lumo-accent`, `--lumo-accent-ink`, `--lumo-bg`, `--lumo-bg-raised`, `--lumo-surface`, `--lumo-text`, `--lumo-text-dim`, `--lumo-radius`, `--lumo-radius-card`.
+<table>
+  <tr>
+    <td><img src="docs/screenshots/de-choix.jpg" alt="Choix du genre"><br><sub>Choix du genre et du type</sub></td>
+    <td><img src="docs/screenshots/de-resultat.jpg" alt="Résultat de la roulette"><br><sub>La roulette s'arrête sur un titre</sub></td>
+  </tr>
+</table>
 
-Options JavaScript (à ajouter au début du script Lumo dans JavaScript Injector) :
+## Les écrans
 
-```js
-window.LUMO_CONFIG = { heroItems: 8, heroIntervalMs: 8000, diceHistory: 60 };
+<table>
+  <tr>
+    <td><img src="docs/screenshots/rangees.jpg" alt="Rangées par genre"><br><sub>Rangées par genre, 5 par 5, tuile « Voir plus »</sub></td>
+    <td><img src="docs/screenshots/studio.jpg" alt="Fiche studio"><br><sub>Fiche d'un studio : tous ses titres</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/bibliotheque.jpg" alt="Bibliothèque"><br><sub>Bibliothèque native, affiches uniformes</sub></td>
+    <td><img src="docs/screenshots/fiche.jpg" alt="Fiche d'un film"><br><sub>Fiche d'un film</sub></td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/screenshots/mobile.jpg" alt="Accueil sur téléphone" width="320"><br><sub>Sur téléphone</sub></p>
+
+## Installation
+
+En root, dans le conteneur ou la machine Jellyfin :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash
 ```
 
-## Dépannage
+Le script installe les plugins nécessaires (File Transformation, JavaScript Injector), sauvegarde la configuration, copie tout le CSS dans *CSS personnalisée* et tout le JS dans *JavaScript Injector*, puis redémarre Jellyfin. Relancez-le pour mettre à jour ; `--uninstall` retire tout.
 
-- **L'accueil reste celui de Jellyfin d'origine après un redémarrage** : rechargez sans cache (Ctrl+F5). Un navigateur qui a chargé la page pendant le redémarrage peut garder une version sans les modifications des plugins.
-- **Rien de Lumo n'apparaît** : vérifiez que JavaScript Injector est actif et que le script « Lumo » est coché, puis Ctrl+F5.
-
-## Désinstaller
-
-Relancez le script avec `--uninstall`, ou videz **CSS personnalisée** et supprimez le script « Lumo » dans JavaScript Injector.
+Détails, options, installation à la main, réglages conseillés de Home Screen Sections et dépannage : **[docs/INSTALLATION.md](docs/INSTALLATION.md)**.
 
 ## Logos
 
-Les logos de studios proviennent de Wikimedia Commons (voir [`assets/logos/SOURCES.md`](assets/logos/SOURCES.md)). Les marques appartiennent à leurs titulaires.
+Les logos de studios proviennent de Wikimedia Commons (voir [`assets/logos/SOURCES.md`](assets/logos/SOURCES.md)). Les marques appartiennent à leurs titulaires. Les captures d'écran montrent des affiches de films à titre d'illustration.
 
 ## Licence
 

@@ -581,6 +581,26 @@ a,
   position: absolute;
   inset: 0;
 }
+/* Aucun liseré en bas du hero, quelle que soit la taille d'écran ou le zoom :
+   1) l'image s'efface d'elle-même avant le bord (son calque GPU, agrandi par
+      l'effet de zoom lent, ne peut plus « baver » sous le dégradé) ;
+   2) le voile déborde d'un pixel ; 3) une bande de fond couvre le bord. */
+.lumo-hero__media {
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 97%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 97%);
+}
+.lumo-hero__shade { inset: -1px; }
+.lumo-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: var(--lumo-bg);
+  z-index: 1;
+  pointer-events: none;
+}
 .lumo-hero__img {
   background-size: cover;
   background-position: center 22%;
@@ -593,7 +613,9 @@ a,
   transform: scale(1);
 }
 .lumo-hero__shade {
+  /* Haut assombri : l'en-tête reste lisible même sur une image très claire. */
   background:
+    linear-gradient(180deg, rgba(11, 11, 12, .78) 0, rgba(11, 11, 12, .35) calc(var(--lumo-hero-pull, 48px) + 40px), rgba(11, 11, 12, 0) 34%),
     linear-gradient(90deg, rgba(11, 11, 12, .92) 0%, rgba(11, 11, 12, .6) 34%, rgba(11, 11, 12, 0) 66%),
     linear-gradient(0deg, var(--lumo-bg) 0%, rgba(11, 11, 12, 0) 42%);
 }
@@ -690,7 +712,9 @@ a,
 @media (max-width: 720px) {
   .lumo-hero { height: clamp(420px, 72vh, 620px); }
   .lumo-hero__shade {
-    background: linear-gradient(0deg, var(--lumo-bg) 8%, rgba(11, 11, 12, .55) 55%, rgba(11, 11, 12, .1) 100%);
+    background:
+      linear-gradient(180deg, rgba(11, 11, 12, .75) 0, rgba(11, 11, 12, 0) calc(var(--lumo-hero-pull, 48px) + 60px)),
+      linear-gradient(0deg, var(--lumo-bg) 8%, rgba(11, 11, 12, .55) 55%, rgba(11, 11, 12, .1) 100%);
   }
   .lumo-hero__body { bottom: 4.5em; }
   .lumo-hero__nav { left: 50%; right: auto; bottom: 1.2em; transform: translateX(-50%); }

@@ -1,0 +1,9 @@
+/* Lumo — palette « Vert menthe »
+ * Un vert frais, discret sur les affiches colorées.
+ * À coller à la fin de : Tableau de bord > Général > CSS personnalisée
+ * (ou : install.sh --accent "#3ecf8e" --ink "#04140c")
+ */
+:root {
+  --lumo-accent: #3ecf8e;      /* boutons, liserés, points du hero, roulette */
+  --lumo-accent-ink: #04140c;  /* texte posé sur la couleur dominante */
+}
