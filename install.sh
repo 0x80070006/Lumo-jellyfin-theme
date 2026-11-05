@@ -17,7 +17,7 @@
 # Le script est idempotent : relancez-le pour mettre à jour.
 set -euo pipefail
 
-VERSION="${LUMO_VERSION:-1.2.2}"
+VERSION="${LUMO_VERSION:-1.3.0}"
 REPO="0x80070006/Lumo-jellyfin-theme"
 RAW="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
 CDN="https://cdn.jsdelivr.net/gh/${REPO}@${VERSION}/"

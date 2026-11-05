@@ -33,8 +33,8 @@ Ensuite, **rechargez chaque appareil une fois avec Ctrl+F5** (ou videz le cache 
 Après l'installation, *CSS personnalisée* ne contient que ceci :
 
 ```css
-/* Lumo 1.2.2 — le thème est chargé depuis GitHub ; relancez install.sh pour mettre à jour. */
-@import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.2.2/lumo.css");
+/* Lumo 1.3.0 — le thème est chargé depuis GitHub ; relancez install.sh pour mettre à jour. */
+@import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.3.0/lumo.css");
 
 /* Couleur dominante : changez ces deux valeurs, enregistrez, puis Ctrl+F5. */
 :root {
@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main
 | `--inline` | copie tout le CSS et le JS dans Jellyfin au lieu de les charger depuis GitHub |
 | `--source DIR` | comme `--inline`, avec `lumo.css` et `lumo.js` pris dans `DIR` |
 
-Variable d'environnement : `LUMO_VERSION=1.2.2` pour installer une version précise.
+Variable d'environnement : `LUMO_VERSION=1.3.0` pour installer une version précise.
 
 ## Mettre à jour
 
@@ -93,13 +93,13 @@ Sans Home Screen Sections, l'accueil natif de Jellyfin s'affiche entre les rang�
 
 1. Dans *CSS personnalisée*, collez :
    ```css
-   @import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.2.2/lumo.css");
+   @import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.3.0/lumo.css");
    :root { --lumo-accent: #f2a541; --lumo-accent-ink: #1a1206; }
    ```
 2. Installez **JavaScript Injector** : *Plugins → Dépôts →* `https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/manifest.json`, puis *Catalogue → JavaScript Injector*. Redémarrez.
 3. Dans *JavaScript Injector*, ajoutez un script nommé `Lumo` contenant la ligne ci-dessous, cochez *Enabled* et enregistrez :
    ```js
-   (function(){var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.2.2/lumo.js";s.defer=true;s.dataset.lumo="1";document.head.appendChild(s);})();
+   (function(){var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.3.0/lumo.js";s.defer=true;s.dataset.lumo="1";document.head.appendChild(s);})();
    ```
 
 ## Désinstaller
@@ -119,6 +119,7 @@ Les sauvegardes restent dans `/var/lib/jellyfin/lumo-backups/`. Pour revenir exa
 | Page sans style, ou ni hero ni dé | L'appareil n'atteint pas `cdn.jsdelivr.net`. Vérifiez l'accès réseau, ou réinstallez avec `--inline`. |
 | Logos de studios remplacés par leur nom | Même cause, en mode `--inline` : ce n'est que cosmétique. |
 | Une rangée de genre n'apparaît pas | Moins de 4 titres pour ce genre dans votre bibliothèque : la rangée est masquée volontairement. |
+| Les critères du dé ou du tournoi ne donnent rien | Combinaison trop étroite (genres + durée + non vus). Élargissez : la durée ne s'applique qu'aux films. |
 | Le bouton Lecture ouvre la fiche au lieu de lancer la lecture | La lecture à distance sur sa propre session a échoué (droits de lecture, session absente). La fiche s'ouvre en secours. |
 
 Journal du serveur : `journalctl -u jellyfin` ou `/var/log/jellyfin/`. Messages de Lumo : console du navigateur, préfixe `[Lumo]`.

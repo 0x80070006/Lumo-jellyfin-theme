@@ -1156,6 +1156,211 @@ html.lumo-layer-open { overflow: hidden; }
   .lumo-studio-head { padding: 1.4em 1em 1em; }
 }
 
+/* ───── Filtres communs (dé, tournoi) ───── */
+
+.lumo-filters { display: flex; flex-direction: column; gap: 1em; }
+.lumo-field { display: flex; flex-direction: column; gap: .5em; transition: opacity var(--lumo-fast); }
+.lumo-field__label {
+  font-size: .78em;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--lumo-text-dim);
+}
+.lumo-field__label small {
+  margin-left: .4em;
+  font-size: 1em;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: .75;
+}
+.lumo-field.is-off { opacity: .35; pointer-events: none; }
+.lumo-field .lumo-seg { align-self: flex-start; }
+.lumo-chips button[aria-pressed="true"] {
+  background: var(--lumo-accent);
+  border-color: var(--lumo-accent);
+  color: var(--lumo-accent-ink);
+}
+
+/* Icônes au trait (coupe) */
+.lumo-ico-stroke { display: inline-grid; place-items: center; }
+.lumo-ico-stroke svg,
+.lumo-cup-btn svg {
+  fill: none !important;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lumo-cup-btn svg { width: 1em; height: 1em; }
+.lumo-cup-btn.paper-icon-button-light svg { width: 1.4em; height: 1.4em; }
+.lumo-cup-btn:hover svg { transform: translateY(-1px) rotate(6deg); transition: transform 200ms var(--lumo-ease); }
+.lumo-btn .lumo-ico-stroke svg { width: 1.25em; height: 1.25em; }
+
+/* ───── Le tournoi ───── */
+
+.lumo-layer--cup .lumo-layer__panel { width: min(920px, 100%); }
+.lumo-cup__msg { margin: 0; min-height: 1.2em; color: var(--lumo-text-dim); font-size: .92em; }
+
+.lumo-duel { padding: 1.6em 1.8em 2em; }
+.lumo-duel__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1em;
+  margin: 0 2.8em 1.4em 0;
+}
+.lumo-duel__round { font: 750 1.15rem/1.2 var(--lumo-font); letter-spacing: -.01em; }
+.lumo-duel__progress {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--lumo-line);
+  overflow: hidden;
+}
+.lumo-duel__progress i {
+  display: block;
+  height: 100%;
+  background: var(--lumo-accent);
+  transition: width 400ms var(--lumo-ease);
+}
+.lumo-duel__hint { font-size: .82em; color: var(--lumo-text-dim); }
+
+.lumo-duel__arena {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1.4em;
+}
+.lumo-duel__vs {
+  display: grid;
+  place-items: center;
+  width: 3.2em;
+  height: 3.2em;
+  border-radius: 50%;
+  border: 1px solid var(--lumo-line);
+  background: var(--lumo-bg);
+  font: 800 .95rem/1 var(--lumo-font);
+  letter-spacing: .04em;
+  color: var(--lumo-text-dim);
+}
+.lumo-duel__card {
+  display: flex;
+  flex-direction: column;
+  gap: .45em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lumo-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  animation: lumo-duel-in 380ms var(--lumo-ease) both;
+  transition: opacity 300ms ease, transform 300ms var(--lumo-ease), filter 300ms ease;
+}
+.lumo-duel__card[data-side="b"] { animation-delay: 70ms; }
+.lumo-duel__poster {
+  position: relative;
+  display: block;
+  aspect-ratio: 2 / 3;
+  max-height: 56vh;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--lumo-surface);
+}
+.lumo-duel__poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lumo-duel__poster::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px transparent;
+  transition: box-shadow var(--lumo-fast);
+}
+.lumo-duel__name { font: 700 1.05rem/1.25 var(--lumo-font); }
+.lumo-duel__meta { font-size: .85em; color: var(--lumo-text-dim); }
+@media (hover: hover) and (pointer: fine) {
+  .lumo-duel__card:hover .lumo-duel__poster::after { box-shadow: inset 0 0 0 3px var(--lumo-accent); }
+}
+.lumo-duel__card:focus-visible { outline: none; }
+.lumo-duel__card:focus-visible .lumo-duel__poster::after { box-shadow: inset 0 0 0 3px var(--lumo-accent); }
+.lumo-duel__card.is-win { transform: scale(1.03); }
+.lumo-duel__card.is-win .lumo-duel__poster::after { box-shadow: inset 0 0 0 3px var(--lumo-accent); }
+.lumo-duel__card.is-out { opacity: .25; transform: scale(.96); filter: grayscale(1); }
+@keyframes lumo-duel-in { from { opacity: 0; transform: translateY(12px); } }
+
+.lumo-win {
+  position: relative;
+  padding: 2em 2em 2.2em;
+  overflow: hidden;
+}
+.lumo-confetti {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+.lumo-win__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  margin-bottom: 1.2em;
+  padding: .45em .9em .45em .7em;
+  border-radius: 999px;
+  background: var(--lumo-accent);
+  color: var(--lumo-accent-ink);
+  font: 750 .85rem/1 var(--lumo-font);
+  letter-spacing: .02em;
+  animation: lumo-rise 400ms var(--lumo-ease);
+}
+.lumo-win__badge svg { width: 1.2em; height: 1.2em; }
+.lumo-win__body {
+  display: grid;
+  grid-template-columns: minmax(150px, 230px) 1fr;
+  gap: 1.6em;
+  align-items: start;
+}
+.lumo-win__poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px var(--lumo-accent), 0 20px 50px rgba(0, 0, 0, .5);
+  animation: lumo-win-pop 600ms var(--lumo-ease);
+}
+.lumo-win__info h2 { margin: 0; font: 800 clamp(1.5rem, 3vw, 2.1rem)/1.1 var(--lumo-font); letter-spacing: -.02em; }
+.lumo-win__info .lumo-hero__meta { margin: .8em 0; }
+.lumo-win__overview {
+  margin: 0 0 .9em;
+  color: #c9c9cd;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lumo-win__path { margin: 0 0 1.3em; font-size: .88em; color: var(--lumo-text-dim); line-height: 1.5; }
+.lumo-win__path b { color: var(--lumo-text); font-weight: 600; }
+@keyframes lumo-win-pop {
+  0% { opacity: 0; transform: scale(.9) rotate(-2deg); }
+  60% { opacity: 1; transform: scale(1.03) rotate(.5deg); }
+  100% { transform: none; }
+}
+
+@media (max-width: 640px) {
+  .lumo-duel { padding: 1.2em 1em 1.4em; }
+  .lumo-duel__head { grid-template-columns: 1fr; gap: .5em; margin-right: 2.8em; }
+  .lumo-duel__hint { display: none; }
+  .lumo-duel__arena { gap: .6em; }
+  .lumo-duel__vs { width: 2.4em; height: 2.4em; font-size: .8rem; }
+  .lumo-duel__poster { max-height: 42vh; }
+  .lumo-duel__name { font-size: .92rem; }
+  .lumo-win { padding: 1.4em 1.1em 1.6em; }
+  .lumo-win__body { grid-template-columns: 110px 1fr; gap: 1em; }
+}
+
 /* ───── Accessibilité ───── */
 
 @media (prefers-reduced-motion: reduce) {

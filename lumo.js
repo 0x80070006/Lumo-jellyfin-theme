@@ -1,6 +1,6 @@
 /*
  * Lumo — couche interactive pour Jellyfin 12
- * Hero cinématique, rail des studios, dé + roulette.
+ * Hero cinématique, rails studios et plateformes, rangées, dé + roulette, tournoi.
  *
  * Principes :
  *  - n'utilise que l'API publique via window.ApiClient (aucun jeton manipulé) ;
@@ -12,14 +12,14 @@
 (() => {
   "use strict";
   if (window.__lumo) return;
-  window.__lumo = { version: "1.2.2" };
+  window.__lumo = { version: "1.3.0" };
 
   const LOG = "[Lumo]";
   const BASE = (() => {
     if (window.LUMO_BASE) return String(window.LUMO_BASE).replace(/\/?$/, "/");
     const src = document.currentScript && document.currentScript.src;
     if (src && /lumo(\.min)?\.js/.test(src)) return src.replace(/lumo(\.min)?\.js.*$/, "");
-    return "https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.2.2/";
+    return "https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.3.0/";
   })();
 
   const CONFIG = Object.assign({
@@ -639,25 +639,33 @@
     load("PremiereDate,SortName", "Descending");
   }
 
-  /* ───────── dé + roulette ───────── */
+  /* ───────── en-tête : dé et tournoi ───────── */
 
   const DIE_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.4"/><circle cx="15.5" cy="8.5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="8.5" cy="15.5" r="1.4"/><circle cx="15.5" cy="15.5" r="1.4"/></svg>`;
+  const CUP_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 4h9v4.5a4.5 4.5 0 0 1-9 0V4z"/><path d="M7.5 6H4.5v1a3.5 3.5 0 0 0 3.4 3.5M16.5 6h3v1a3.5 3.5 0 0 1-3.4 3.5"/><path d="M12 13v3.5M8.5 20.5h7M9.5 20.5l.5-4h4l.5 4"/></svg>`;
+  const CLOSE_BTN = `<button type="button" class="lumo-round lumo-layer__close" data-close aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
+  const PLAY_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>`;
 
-  /* Le dé se place juste avant la loupe de l'en-tête visible : barre React/MUI
-     de Jellyfin 12 (lien #/search) ou en-tête historique (mode TV). On copie
-     les classes de la loupe pour obtenir exactement le même bouton. */
+  /* Le dé et la coupe se placent juste avant la loupe de l'en-tête visible :
+     barre React/MUI de Jellyfin 12 (lien #/search) ou en-tête historique (TV).
+     On copie les classes de la loupe pour obtenir exactement le même bouton. */
   function visible(n) { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; }
+  function headerButton(search, cls, svg, title, onClick) {
+    const b = el("button", `${search.className} ${cls}`, svg);
+    b.type = "button";
+    b.title = title;
+    b.setAttribute("aria-label", title);
+    b.addEventListener("click", onClick);
+    search.parentElement.insertBefore(b, search);
+  }
   function ensureDice() {
     const search = [...document.querySelectorAll('a[href="#/search"], .headerSearchButton')].find(visible);
     if (!search || !search.parentElement) return;
-    if (search.parentElement.querySelector(":scope > .lumo-dice-btn")) return;
-    document.querySelectorAll(".lumo-dice-btn").forEach((n) => n.remove());
-    const b = el("button", `${search.className} lumo-dice-btn`, DIE_SVG);
-    b.type = "button";
-    b.title = "Choisir au hasard";
-    b.setAttribute("aria-label", "Choisir un titre au hasard");
-    b.addEventListener("click", openDice);
-    search.parentElement.insertBefore(b, search);
+    const parent = search.parentElement;
+    if (parent.querySelector(":scope > .lumo-dice-btn") && parent.querySelector(":scope > .lumo-cup-btn")) return;
+    document.querySelectorAll(".lumo-dice-btn, .lumo-cup-btn").forEach((n) => n.remove());
+    headerButton(search, "lumo-dice-btn", DIE_SVG, "Choisir au hasard", openDice);
+    headerButton(search, "lumo-cup-btn", CUP_SVG, "Le tournoi", openCup);
   }
 
   async function genreGroups() {
@@ -673,25 +681,135 @@
     return groups;
   }
 
-  const dice = { genre: null, type: "Movie", unseen: false, spinning: false };
+  /* ───────── filtres communs (dé, tournoi) ───────── */
 
-  async function openDice() {
+  const DURATIONS = [
+    { id: "", label: "Sans préférence" },
+    { id: "short", label: "Moins de 1 h 30", max: 90 },
+    { id: "mid", label: "1 h 30 à 2 h", min: 90, max: 120 },
+    { id: "long", label: "Plus de 2 h", min: 120 }
+  ];
+
+  function loadFilters(name) {
+    const f = store.get("filters." + name, {}) || {};
+    return {
+      type: ["Movie", "Series", "Movie,Series"].includes(f.type) ? f.type : "Movie",
+      genres: Array.isArray(f.genres) ? f.genres : [],
+      duration: DURATIONS.some((d) => d.id === f.duration) ? f.duration : "",
+      unseen: Boolean(f.unseen)
+    };
+  }
+
+  /* Panneau de critères : type, un ou plusieurs genres, durée, non vus.
+     Les choix sont mémorisés (par fonctionnalité) d'une ouverture à l'autre. */
+  function filterPanel(host, name, f) {
+    host.innerHTML = `
+      <div class="lumo-field">
+        <span class="lumo-field__label">Type</span>
+        <div class="lumo-seg" role="radiogroup" aria-label="Type" data-k="type">
+          <button type="button" role="radio" data-v="Movie">Films</button>
+          <button type="button" role="radio" data-v="Series">Séries</button>
+          <button type="button" role="radio" data-v="Movie,Series">Les deux</button>
+        </div>
+      </div>
+      <div class="lumo-field">
+        <span class="lumo-field__label">Genres <small>un ou plusieurs</small></span>
+        <div class="lumo-chips" role="group" aria-label="Genres" data-k="genres"><span class="lumo-chips__loading">Chargement des genres…</span></div>
+      </div>
+      <div class="lumo-field" data-field="duration">
+        <span class="lumo-field__label">Durée <small>des films</small></span>
+        <div class="lumo-chips" role="radiogroup" aria-label="Durée" data-k="duration">
+          ${DURATIONS.map((d) => `<button type="button" role="radio" data-v="${d.id}">${esc(d.label)}</button>`).join("")}
+        </div>
+      </div>
+      <label class="lumo-check"><input type="checkbox" data-k="unseen"><span>Seulement ce que je n'ai pas vu</span></label>`;
+
+    const sync = () => {
+      host.querySelectorAll('[data-k="type"] button').forEach((b) => b.setAttribute("aria-checked", String(b.dataset.v === f.type)));
+      host.querySelectorAll('[data-k="duration"] button').forEach((b) => b.setAttribute("aria-checked", String(b.dataset.v === f.duration)));
+      host.querySelectorAll('[data-k="genres"] button').forEach((b) => {
+        b.setAttribute("aria-pressed", String(b.dataset.v === "" ? !f.genres.length : f.genres.includes(b.dataset.v)));
+      });
+      host.querySelector('[data-field="duration"]').classList.toggle("is-off", f.type === "Series");
+      host.querySelector('[data-k="unseen"]').checked = f.unseen;
+      store.set("filters." + name, f);
+    };
+
+    host.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-v]");
+      if (!b) return;
+      const k = b.parentElement.dataset.k;
+      if (k === "type") f.type = b.dataset.v;
+      else if (k === "duration") f.duration = b.dataset.v;
+      else if (k === "genres") {
+        const v = b.dataset.v;
+        f.genres = !v ? [] : f.genres.includes(v) ? f.genres.filter((x) => x !== v) : f.genres.concat(v);
+      }
+      sync();
+    });
+    host.querySelector('[data-k="unseen"]').addEventListener("change", (e) => { f.unseen = e.target.checked; sync(); });
+    sync();
+
+    genreGroups().then((groups) => {
+      f.genres = f.genres.filter((label) => groups.some((g) => g.label === label));
+      host.querySelector('[data-k="genres"]').innerHTML = `<button type="button" data-v="">Tous</button>`
+        + groups.map((g) => `<button type="button" data-v="${esc(g.label)}">${esc(g.label)}</button>`).join("");
+      sync();
+    }).catch(() => {
+      host.querySelector('[data-k="genres"]').innerHTML = `<span class="lumo-chips__loading">Genres indisponibles : tous les genres seront utilisés.</span>`;
+    });
+  }
+
+  /* Titres correspondant aux critères, dans un ordre aléatoire. Jellyfin n'a
+     pas de filtre de durée : on tire un échantillon large puis on filtre sur
+     la durée réelle des films (les séries ne sont pas concernées). */
+  async function fetchPool(f, want) {
+    let ids = [];
+    if (f.genres.length) {
+      const groups = await genreGroups().catch(() => []);
+      ids = [...new Set(groups.filter((g) => f.genres.includes(g.label)).flatMap((g) => g.ids))];
+    }
+    const dur = DURATIONS.find((d) => d.id === f.duration && d.id);
+    const query = {
+      IncludeItemTypes: f.type, SortBy: "Random", Limit: dur ? 400 : want,
+      ImageTypes: "Primary", Fields: FIELDS, EnableUserData: true
+    };
+    if (ids.length) query.GenreIds = ids.join(",");
+    if (f.unseen) query.IsPlayed = false;
+    const res = await items(query);
+    let list = (res.Items || []).filter((it) => it.ImageTags && it.ImageTags.Primary);
+    if (dur) {
+      list = list.filter((it) => {
+        if (it.Type !== "Movie") return true;
+        const m = (it.RunTimeTicks || 0) / 6e8;
+        return m > 0 && (dur.min == null || m >= dur.min) && (dur.max == null || m < dur.max);
+      });
+    }
+    return list.slice(0, want);
+  }
+
+  function runtimeText(it) {
+    if (!it.RunTimeTicks || it.Type === "Series") return "";
+    const m = Math.round(it.RunTimeTicks / 6e8);
+    return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`;
+  }
+
+  /* ───────── dé + roulette ───────── */
+
+  const dice = { spinning: false };
+
+  function openDice() {
     if (!api()) return;
+    const f = loadFilters("dice");
     const panel = openLayer("lumo-layer--dice", "Choisir au hasard");
     panel.innerHTML = `
-      <button type="button" class="lumo-round lumo-layer__close" data-close aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      ${CLOSE_BTN}
       <div class="lumo-dice">
         <div class="lumo-dice__head">
           <span class="lumo-dice__icon">${DIE_SVG}</span>
-          <div><h2>On regarde quoi ?</h2><p>Choisis un genre, la roulette s'occupe du reste.</p></div>
+          <div><h2>On regarde quoi ?</h2><p>Choisis tes critères, la roulette s'occupe du reste.</p></div>
         </div>
-        <div class="lumo-seg lumo-dice__type" role="radiogroup" aria-label="Type">
-          <button type="button" role="radio" data-type="Movie">Films</button>
-          <button type="button" role="radio" data-type="Series">Séries</button>
-          <button type="button" role="radio" data-type="Movie,Series">Les deux</button>
-        </div>
-        <div class="lumo-chips" role="radiogroup" aria-label="Genre"><span class="lumo-chips__loading">Chargement des genres…</span></div>
-        <label class="lumo-check"><input type="checkbox" class="lumo-dice__unseen"><span>Seulement ce que je n'ai pas vu</span></label>
+        <div class="lumo-filters"></div>
         <div class="lumo-wheel" hidden>
           <div class="lumo-wheel__window"><div class="lumo-wheel__strip"></div></div>
           <div class="lumo-wheel__marker" aria-hidden="true"></div>
@@ -702,40 +820,11 @@
         </div>
       </div>`;
     panel.focus();
-
-    const typeSeg = panel.querySelector(".lumo-dice__type");
-    const syncType = () => typeSeg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.type === dice.type)));
-    syncType();
-    typeSeg.addEventListener("click", (e) => { const b = e.target.closest("button[data-type]"); if (b) { dice.type = b.dataset.type; syncType(); } });
-
-    const unseen = panel.querySelector(".lumo-dice__unseen");
-    unseen.checked = dice.unseen;
-    unseen.addEventListener("change", () => { dice.unseen = unseen.checked; });
-
-    const chips = panel.querySelector(".lumo-chips");
-    try {
-      const groups = await genreGroups();
-      chips.innerHTML = [`<button type="button" role="radio" data-g="">Tous</button>`]
-        .concat(groups.map((g, k) => `<button type="button" role="radio" data-g="${k}">${esc(g.label)}</button>`)).join("");
-      const syncChips = () => chips.querySelectorAll("button").forEach((b) => {
-        const on = b.dataset.g === "" ? !dice.genre : dice.genre && groups[b.dataset.g]?.label === dice.genre.label;
-        b.setAttribute("aria-checked", String(Boolean(on)));
-      });
-      syncChips();
-      chips.addEventListener("click", (e) => {
-        const b = e.target.closest("button[data-g]");
-        if (!b) return;
-        dice.genre = b.dataset.g === "" ? null : groups[b.dataset.g];
-        syncChips();
-      });
-    } catch (e) {
-      chips.innerHTML = `<span class="lumo-chips__loading">Genres indisponibles : tirage sur toute la bibliothèque.</span>`;
-    }
-
-    panel.querySelector(".lumo-dice__go").addEventListener("click", () => spin(panel));
+    filterPanel(panel.querySelector(".lumo-filters"), "dice", f);
+    panel.querySelector(".lumo-dice__go").addEventListener("click", () => spin(panel, f));
   }
 
-  async function spin(panel) {
+  async function spin(panel, f) {
     if (dice.spinning) return;
     dice.spinning = true;
     const go = panel.querySelector(".lumo-dice__go");
@@ -748,17 +837,11 @@
     try {
       const histKey = "dice.history." + uid();
       const history = store.get(histKey, []);
-      const query = {
-        IncludeItemTypes: dice.type, SortBy: "Random", Limit: 80, ImageTypes: "Primary",
-        Fields: FIELDS, EnableUserData: true
-      };
-      if (dice.genre) query.GenreIds = dice.genre.ids.join(",");
-      if (dice.unseen) query.IsPlayed = false;
-      const res = await items(query);
-      let pool = (res.Items || []).filter((it) => it.ImageTags && it.ImageTags.Primary);
+      const pool = await fetchPool(f, 80);
       if (!pool.length) {
+        wheel.hidden = true;
         pick.hidden = false;
-        pick.innerHTML = `<p class="lumo-empty">Rien à tirer avec ces critères.</p>`;
+        pick.innerHTML = `<p class="lumo-empty">Rien à tirer avec ces critères. Élargis un peu la sélection.</p>`;
         return;
       }
       // « Toujours différent » : on écarte les derniers tirages.
@@ -828,12 +911,224 @@
         <div class="lumo-hero__meta">${metaChips(it)}</div>
         <p>${esc(it.Overview || "")}</p>
         <div class="lumo-hero__actions">
-          <button type="button" class="lumo-btn lumo-btn--primary" data-act="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><span>Lecture</span></button>
+          <button type="button" class="lumo-btn lumo-btn--primary" data-act="play">${PLAY_SVG}<span>Lecture</span></button>
           <button type="button" class="lumo-btn" data-act="info"><span>Voir la fiche</span></button>
         </div>
       </div>`;
     pick.querySelector('[data-act="play"]').addEventListener("click", () => { closeLayer(); play(it); });
     pick.querySelector('[data-act="info"]').addEventListener("click", () => { closeLayer(); goDetails(it.Id); });
+    // Le résultat peut tomber sous les filtres : on l'amène à l'écran.
+    requestAnimationFrame(() => {
+      const foot = pick.parentElement && pick.parentElement.querySelector(".lumo-dice__foot");
+      (foot || pick).scrollIntoView({ block: "end", behavior: reducedMotion() ? "auto" : "smooth" });
+    });
+  }
+
+  /* ───────── le tournoi ───────── */
+
+  const ROUND_NAMES = { 2: "Finale", 4: "Demi-finale", 8: "Quart de finale" };
+
+  function openCup() {
+    if (!api()) return;
+    const f = loadFilters("cup");
+    const panel = openLayer("lumo-layer--cup", "Le tournoi");
+    let onKey = null;
+    const keyListener = (e) => {
+      if (!panel.isConnected) { document.removeEventListener("keydown", keyListener); return; }
+      if (onKey) onKey(e);
+    };
+    document.addEventListener("keydown", keyListener);
+
+    const setup = () => {
+      onKey = null;
+      panel.innerHTML = `
+        ${CLOSE_BTN}
+        <div class="lumo-dice lumo-cup">
+          <div class="lumo-dice__head">
+            <span class="lumo-dice__icon lumo-ico-stroke">${CUP_SVG}</span>
+            <div><h2>Le tournoi</h2><p>8 titres s'affrontent en duels. Garde ton préféré à chaque fois : le vainqueur se lance.</p></div>
+          </div>
+          <div class="lumo-filters"></div>
+          <p class="lumo-cup__msg" aria-live="polite"></p>
+          <div class="lumo-dice__foot">
+            <button type="button" class="lumo-btn lumo-btn--primary lumo-cup__go"><span class="lumo-ico-stroke">${CUP_SVG}</span><span>Lancer le tournoi</span></button>
+          </div>
+        </div>`;
+      panel.focus();
+      filterPanel(panel.querySelector(".lumo-filters"), "cup", f);
+      panel.querySelector(".lumo-cup__go").addEventListener("click", start);
+    };
+
+    const start = async () => {
+      const go = panel.querySelector(".lumo-cup__go");
+      const msg = panel.querySelector(".lumo-cup__msg");
+      go.disabled = true;
+      msg.textContent = "Tirage des participants…";
+      try {
+        const pool = shuffle(await fetchPool(f, 60));
+        const size = pool.length >= 8 ? 8 : pool.length >= 4 ? 4 : pool.length >= 2 ? 2 : 0;
+        if (!size) {
+          msg.textContent = "Pas assez de titres avec ces critères. Élargis un peu la sélection.";
+          go.disabled = false;
+          return;
+        }
+        const entrants = pool.slice(0, size);
+        await Promise.race([
+          Promise.all(entrants.map((it) => preload(posterOf(it, 600)))),
+          new Promise((r) => setTimeout(r, 1500))
+        ]);
+        if (panel.isConnected) bracket(entrants);
+      } catch (e) {
+        console.warn(LOG, "tournoi", e);
+        msg.textContent = "Le tirage a échoué. Réessaie.";
+        go.disabled = false;
+      }
+    };
+
+    const card = (it, side) => {
+      const meta = [it.ProductionYear, runtimeText(it), it.CommunityRating ? `★ ${it.CommunityRating.toFixed(1)}` : ""].filter(Boolean);
+      return `<button type="button" class="lumo-duel__card" data-side="${side}" aria-label="Choisir ${esc(it.Name)}">
+          <span class="lumo-duel__poster"><img src="${posterOf(it, 600)}" alt=""></span>
+          <span class="lumo-duel__name">${esc(it.Name)}</span>
+          <span class="lumo-duel__meta">${meta.map(esc).join(" · ")}</span>
+        </button>`;
+    };
+
+    const bracket = (entrants) => {
+      let round = entrants.map((it) => ({ it, beaten: [] }));
+      let next = [];
+      let i = 0;
+      let done = 0;
+      const total = entrants.length - 1;
+
+      const duel = () => {
+        if (i >= round.length) { round = next; next = []; i = 0; }
+        if (round.length === 1) { victory(round[0]); return; }
+        const a = round[i];
+        const b = round[i + 1];
+        const inRound = round.length / 2;
+        const label = ROUND_NAMES[round.length] || "Tour";
+        panel.innerHTML = `
+          ${CLOSE_BTN}
+          <div class="lumo-cup lumo-duel">
+            <div class="lumo-duel__head">
+              <span class="lumo-duel__round">${label}${inRound > 1 ? ` · ${i / 2 + 1}/${inRound}` : ""}</span>
+              <span class="lumo-duel__progress" aria-hidden="true"><i style="width:${(done / total) * 100}%"></i></span>
+              <span class="lumo-duel__hint">Clique sur ton préféré · ← →</span>
+            </div>
+            <div class="lumo-duel__arena">
+              ${card(a.it, "a")}
+              <span class="lumo-duel__vs" aria-hidden="true">VS</span>
+              ${card(b.it, "b")}
+            </div>
+          </div>`;
+        panel.focus();
+        let chosen = false;
+        const pickSide = (side) => {
+          if (chosen) return;
+          chosen = true;
+          const w = side === "a" ? a : b;
+          const l = side === "a" ? b : a;
+          panel.querySelector(`[data-side="${side}"]`).classList.add("is-win");
+          panel.querySelector(`[data-side="${side === "a" ? "b" : "a"}"]`).classList.add("is-out");
+          w.beaten.push(l.it);
+          next.push(w);
+          i += 2;
+          done += 1;
+          setTimeout(() => { if (panel.isConnected) duel(); }, reducedMotion() ? 120 : 560);
+        };
+        panel.querySelectorAll("[data-side]").forEach((c) => c.addEventListener("click", () => pickSide(c.dataset.side)));
+        onKey = (e) => {
+          if (e.key === "ArrowLeft") { pickSide("a"); e.preventDefault(); }
+          if (e.key === "ArrowRight") { pickSide("b"); e.preventDefault(); }
+        };
+      };
+      duel();
+    };
+
+    const victory = (w) => {
+      onKey = null;
+      const it = w.it;
+      panel.innerHTML = `
+        ${CLOSE_BTN}
+        <div class="lumo-cup lumo-win">
+          <canvas class="lumo-confetti" aria-hidden="true"></canvas>
+          <div class="lumo-win__badge"><span class="lumo-ico-stroke">${CUP_SVG}</span><span>Vainqueur du tournoi</span></div>
+          <div class="lumo-win__body">
+            <img class="lumo-win__poster" src="${posterOf(it, 600)}" alt="">
+            <div class="lumo-win__info">
+              <h2>${esc(it.Name)}</h2>
+              <div class="lumo-hero__meta">${metaChips(it)}</div>
+              <p class="lumo-win__overview">${esc(it.Overview || "")}</p>
+              ${w.beaten.length ? `<p class="lumo-win__path">A battu ${w.beaten.map((x) => `<b>${esc(x.Name)}</b>`).join(", ")}</p>` : ""}
+              <div class="lumo-hero__actions">
+                <button type="button" class="lumo-btn lumo-btn--primary" data-act="play">${PLAY_SVG}<span>Lecture</span></button>
+                <button type="button" class="lumo-btn" data-act="info"><span>Voir la fiche</span></button>
+                <button type="button" class="lumo-btn" data-act="again"><span>Nouveau tournoi</span></button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      panel.focus();
+      panel.querySelector('[data-act="play"]').addEventListener("click", () => { closeLayer(); play(it); });
+      panel.querySelector('[data-act="info"]').addEventListener("click", () => { closeLayer(); goDetails(it.Id); });
+      panel.querySelector('[data-act="again"]').addEventListener("click", setup);
+      requestAnimationFrame(() => confetti(panel.querySelector(".lumo-confetti")));
+    };
+
+    setup();
+  }
+
+  /* Confettis : un canevas, trois salves, ~3 s ; rien si l'utilisateur
+     préfère réduire les animations. */
+  function confetti(canvas) {
+    if (!canvas || reducedMotion()) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const box = canvas.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(box.width * dpr);
+    canvas.height = Math.round(box.height * dpr);
+    ctx.scale(dpr, dpr);
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--lumo-accent").trim() || "#f2a541";
+    const colors = [accent, accent, "#ffffff", "#ffd166", "#ff6b6b", "#4ecdc4", "#a78bfa"];
+    const burst = (x, count) => Array.from({ length: count }, () => ({
+      x, y: box.height * 0.32,
+      vx: (Math.random() - 0.5) * 13,
+      vy: -Math.random() * 11 - 5,
+      r: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.35,
+      w: 5 + Math.random() * 6,
+      h: 3 + Math.random() * 4,
+      c: colors[Math.floor(Math.random() * colors.length)]
+    }));
+    let parts = burst(box.width * 0.35, 90).concat(burst(box.width * 0.65, 90));
+    const life = 3200;
+    const t0 = performance.now();
+    let second = false;
+    const frame = (t) => {
+      if (!canvas.isConnected) return;
+      const age = t - t0;
+      if (!second && age > 450) { second = true; parts = parts.concat(burst(box.width * 0.5, 70)); }
+      ctx.clearRect(0, 0, box.width, box.height);
+      ctx.globalAlpha = Math.max(0, 1 - Math.max(0, age - life * 0.55) / (life * 0.45));
+      for (const p of parts) {
+        p.vy += 0.3;
+        p.vx *= 0.99;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.r += p.vr;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2)) + 1);
+        ctx.restore();
+      }
+      if (age < life) requestAnimationFrame(frame);
+      else ctx.clearRect(0, 0, box.width, box.height);
+    };
+    requestAnimationFrame(frame);
   }
 
   /* ───────── montage selon la page ───────── */

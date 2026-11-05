@@ -16,7 +16,8 @@ curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main
 - **Studios** et **Plateformes** en tuiles-logos, 5 par 5, avec flèches. Un clic ouvre tous les titres du studio, même répartis sur plusieurs noms : Walt Disney Pictures, Walt Disney Animation Studios… sont regroupés.
 - **Ajouts récents** par bibliothèque, avec les séries et les animes regroupés **par série** (jamais par épisode ou par saison).
 - **10 rangées par genre** et des **rangées par studio** : 5 affiches visibles, 15 au total, puis une tuile *Voir plus*.
-- **Le dé** à côté de la recherche : choisissez un genre, films ou séries, « seulement ce que je n'ai pas vu », et une roulette tire un titre pour vous. Elle ne propose jamais deux fois de suite les mêmes titres.
+- **Le dé** à côté de la recherche : choisissez films ou séries, **un ou plusieurs genres**, une **durée** (ou sans préférence), « seulement ce que je n'ai pas vu », et une roulette tire un titre pour vous. Elle ne propose jamais deux fois de suite les mêmes titres.
+- **Le tournoi** (la coupe, à côté du dé) : 8 titres s'affrontent en duels, de 2 en 2, jusqu'à la finale. Le vainqueur se lance, sous les confettis. Idéal à plusieurs : chacun vote un duel.
 - **Tuiles uniformes** : toutes les affiches à la même taille, les vignettes « Continuer à regarder » aussi. Le survol ne déplace rien, donc plus de chevauchement.
 - **Une couleur dominante**, modifiable en une ligne.
 
@@ -62,12 +63,35 @@ Autres variables disponibles : `--lumo-bg`, `--lumo-bg-raised`, `--lumo-surface`
 
 ## Le dé
 
-Un clic sur le dé, à côté de la loupe : l'arrière-plan se floute, vous choisissez un genre, et la roulette s'arrête sur un titre, avec *Lecture* ou *Voir la fiche*. *Relancer* tire toujours un autre titre.
+Un clic sur le dé, à côté de la loupe : l'arrière-plan se floute, vous réglez vos critères, et la roulette s'arrête sur un titre, avec *Lecture* ou *Voir la fiche*. *Relancer* tire toujours un autre titre.
+
+| Critère | Choix |
+| --- | --- |
+| Type | Films, Séries, Les deux |
+| Genres | Tous, ou un ou plusieurs genres (Action, Fantastique, Horreur…) |
+| Durée (films) | Sans préférence, moins de 1 h 30, 1 h 30 à 2 h, plus de 2 h |
+| Déjà vus | « Seulement ce que je n'ai pas vu » |
+
+Les critères sont mémorisés d'une fois sur l'autre.
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/de-choix.jpg" alt="Choix du genre"><br><sub>Choix du genre et du type</sub></td>
+    <td><img src="docs/screenshots/de-choix.jpg" alt="Critères du dé et roulette"><br><sub>Plusieurs genres, durée, la roulette tourne</sub></td>
     <td><img src="docs/screenshots/de-resultat.jpg" alt="Résultat de la roulette"><br><sub>La roulette s'arrête sur un titre</sub></td>
+  </tr>
+</table>
+
+## Le tournoi
+
+La coupe, à côté du dé. Mêmes critères que le dé, puis **8 titres** s'affrontent : quarts de finale, demi-finales, finale. Cliquez sur votre préféré (ou flèches ← → du clavier) ; le perdant sort, le gagnant passe au tour suivant. Le vainqueur s'affiche avec les titres qu'il a battus, sous les confettis, prêt à être lancé. S'il y a moins de 8 titres pour vos critères, le tournoi se joue à 4 ou à 2.
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/tournoi-choix.jpg" alt="Critères du tournoi"><br><sub>Les critères</sub></td>
+    <td><img src="docs/screenshots/tournoi-duel.jpg" alt="Un duel"><br><sub>Un duel : choisissez votre préféré</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/tournoi-vainqueur.jpg" alt="Le vainqueur"><br><sub>Le vainqueur, sous les confettis</sub></td>
   </tr>
 </table>
 
@@ -97,8 +121,8 @@ curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main
 Le script installe les plugins nécessaires (File Transformation, JavaScript Injector), sauvegarde la configuration, puis écrit **une ligne** dans *CSS personnalisée* et **une ligne** dans *JavaScript Injector* : tout le code reste sur GitHub. Il ne vous reste que la couleur à régler :
 
 ```css
-/* Lumo 1.2.2 — le thème est chargé depuis GitHub ; relancez install.sh pour mettre à jour. */
-@import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.2.2/lumo.css");
+/* Lumo 1.3.0 — le thème est chargé depuis GitHub ; relancez install.sh pour mettre à jour. */
+@import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1.3.0/lumo.css");
 
 :root {
   --lumo-accent: #f2a541;      /* couleur dominante */
