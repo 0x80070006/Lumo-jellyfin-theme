@@ -17,29 +17,46 @@ Principes : uniquement l'API publique de Jellyfin, aucun fichier de `jellyfin-we
 
 ## Installation
 
-### 1. Le thème CSS
+### En une commande (recommandé)
 
-Tableau de bord → **Général** → **CSS personnalisée** :
+Dans le conteneur ou la machine qui fait tourner Jellyfin, en root :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash
+```
+
+Le script :
+1. installe si besoin **File Transformation** et **JavaScript Injector** (somme de contrôle du dépôt officiel vérifiée) ;
+2. sauvegarde la configuration actuelle dans `/var/lib/jellyfin/lumo-backups/` ;
+3. copie **tout le CSS** dans *CSS personnalisée* et **tout le JS** dans *JavaScript Injector* : rien ne dépend d'un CDN au chargement des pages (seuls les logos de studios viennent de jsDelivr, version figée ; sans réseau, le nom du studio s'affiche à la place) ;
+4. redémarre Jellyfin. Rechargez ensuite chaque appareil une fois avec Ctrl+F5.
+
+Aucun fichier de `jellyfin-web` n'est modifié : les mises à jour de Jellyfin n'effacent rien. Relancez la même commande pour mettre à jour Lumo ; votre couleur dominante est conservée.
+
+Options (après `bash -s --`) :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash -s -- --accent "#e50914"
+curl -fsSL https://raw.githubusercontent.com/0x80070006/Lumo-jellyfin-theme/main/install.sh | bash -s -- --uninstall
+```
+
+`--accent`, `--ink`, `--uninstall`, `--no-plugins`, `--no-restart`, `--source DIR` (fichiers locaux). Version précise : `LUMO_VERSION=1.2.0`.
+
+### À la main
+
+1. Collez [`lumo.css`](lumo.css) dans Tableau de bord → **Général** → **CSS personnalisée**.
+2. Installez **JavaScript Injector** (dépôt `https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/manifest.json`), redémarrez, puis ajoutez un script contenant [`lumo.js`](lumo.js).
+
+### Couleur dominante
+
+À la fin de *CSS personnalisée* :
 
 ```css
-@import url("https://cdn.jsdelivr.net/gh/0x80070006/Lumo-jellyfin-theme@1/lumo.css");
-
-/* Couleur dominante */
 :root {
   --lumo-accent: #f2a541;      /* boutons, liserés, roulette… */
   --lumo-accent-ink: #1a1206;  /* texte posé sur la couleur dominante */
 }
 ```
-
-Vous pouvez aussi coller directement le contenu de [`lumo.css`](lumo.css) (aucune requête réseau supplémentaire).
-
-### 2. La couche interactive (hero, studios, genres, dé)
-
-1. Installez les plugins **File Transformation** et **JavaScript Injector** (dépôt `https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/manifest.json`), puis redémarrez Jellyfin.
-2. Tableau de bord → **JavaScript Injector** → ajoutez un script, collez [`injector-snippet.js`](injector-snippet.js), cochez *Enabled*, enregistrez.
-3. Rechargez la page (Ctrl+F5).
-
-Le plugin ajoute le script à la page au moment où Jellyfin la sert : les mises à jour de Jellyfin n'effacent rien.
 
 ### Écran d'accueil conseillé
 
@@ -49,7 +66,7 @@ Avec *Home Screen Sections*, gardez **Continuer à regarder** (vue paysage) et d
 
 Variables CSS disponibles dans `:root` : `--lumo-accent`, `--lumo-accent-ink`, `--lumo-bg`, `--lumo-bg-raised`, `--lumo-surface`, `--lumo-text`, `--lumo-text-dim`, `--lumo-radius`, `--lumo-radius-card`.
 
-Options JavaScript (à placer avant le chargeur, dans le même script) :
+Options JavaScript (à ajouter au début du script Lumo dans JavaScript Injector) :
 
 ```js
 window.LUMO_CONFIG = { heroItems: 8, heroIntervalMs: 8000, diceHistory: 60 };
@@ -58,11 +75,11 @@ window.LUMO_CONFIG = { heroItems: 8, heroIntervalMs: 8000, diceHistory: 60 };
 ## Dépannage
 
 - **L'accueil reste celui de Jellyfin d'origine après un redémarrage** : rechargez sans cache (Ctrl+F5). Un navigateur qui a chargé la page pendant le redémarrage peut garder une version sans les modifications des plugins.
-- **Rien de Lumo n'apparaît** : vérifiez que JavaScript Injector est actif et que `cdn.jsdelivr.net` est joignable.
+- **Rien de Lumo n'apparaît** : vérifiez que JavaScript Injector est actif et que le script « Lumo » est coché, puis Ctrl+F5.
 
 ## Désinstaller
 
-Videz **CSS personnalisée** et désactivez le script dans JavaScript Injector.
+Relancez le script avec `--uninstall`, ou videz **CSS personnalisée** et supprimez le script « Lumo » dans JavaScript Injector.
 
 ## Logos
 
